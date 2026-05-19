@@ -67,7 +67,7 @@ const SPECIALIZED_AGENTS: { id: AgentTab; label: string; vapiId: string; color: 
   {
     id: 'vinculacion',
     label: 'Campaña de Vinculación',
-    vapiId: '9daec561-013f-49e1-b114-3946211853bf',
+    vapiId: '',
     color: 'text-blue-400',
     bg: 'bg-blue-500/10 border-blue-500/30',
     icon: <Users className="h-4 w-4" />,
@@ -76,7 +76,7 @@ const SPECIALIZED_AGENTS: { id: AgentTab; label: string; vapiId: string; color: 
   {
     id: 'soporte',
     label: 'Conversación de Soporte',
-    vapiId: '',
+    vapiId: '9daec561-013f-49e1-b114-3946211853bf',
     color: 'text-green-400',
     bg: 'bg-green-500/10 border-green-500/30',
     icon: <Headphones className="h-4 w-4" />,
