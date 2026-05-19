@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   Phone, Upload, X, FileText, Paperclip, Loader2,
   Bot, Mic, BarChart3, Play, RefreshCw, CheckCircle2,
-  XCircle, Clock, PhoneCall
+  XCircle, Clock, PhoneCall, Users, Headphones, TrendingUp, AlertTriangle
 } from 'lucide-react';
 import Papa from 'papaparse';
 
@@ -57,11 +57,51 @@ interface VapiCall {
 interface AttachmentFile { file: File; name: string; }
 
 type ActiveTab = 'create' | 'campaigns' | 'calls' | 'history';
+type AgentTab = 'vinculacion' | 'soporte' | 'ventas' | 'linea';
+
+const SPECIALIZED_AGENTS: { id: AgentTab; label: string; vapiId: string; color: string; bg: string; icon: React.ReactNode; description: string }[] = [
+  {
+    id: 'vinculacion',
+    label: 'Campaña de Vinculación',
+    vapiId: '9daec561-013f-49e1-b114-3946211853bf',
+    color: 'text-blue-400',
+    bg: 'bg-blue-500/10 border-blue-500/30',
+    icon: <Users className="h-4 w-4" />,
+    description: 'Llama a prospectos para establecer un primer contacto y vincularlos como clientes.'
+  },
+  {
+    id: 'soporte',
+    label: 'Conversación de Soporte',
+    vapiId: '',
+    color: 'text-green-400',
+    bg: 'bg-green-500/10 border-green-500/30',
+    icon: <Headphones className="h-4 w-4" />,
+    description: 'Gestiona llamadas de soporte técnico y atención al cliente.'
+  },
+  {
+    id: 'ventas',
+    label: 'Ventas / Planes',
+    vapiId: '',
+    color: 'text-amber-400',
+    bg: 'bg-amber-500/10 border-amber-500/30',
+    icon: <TrendingUp className="h-4 w-4" />,
+    description: 'Presenta planes y ofertas comerciales a clientes potenciales.'
+  },
+  {
+    id: 'linea',
+    label: 'Problemas de Línea',
+    vapiId: '',
+    color: 'text-red-400',
+    bg: 'bg-red-500/10 border-red-500/30',
+    icon: <AlertTriangle className="h-4 w-4" />,
+    description: 'Atiende reportes de fallas o problemas con el servicio de línea.'
+  },
+];
 
 const tabs: { id: ActiveTab; label: string; icon: React.ReactNode }[] = [
   { id: 'create', label: 'Nueva Campaña', icon: <Bot className="h-4 w-4" /> },
   { id: 'campaigns', label: 'Gestión de Campañas', icon: <Play className="h-4 w-4" /> },
-  { id: 'calls', label: 'Llamada Rápida', icon: <PhoneCall className="h-4 w-4" /> },
+  { id: 'calls', label: 'Agentes Especializados', icon: <PhoneCall className="h-4 w-4" /> },
   { id: 'history', label: 'Historial', icon: <BarChart3 className="h-4 w-4" /> },
 ];
 
@@ -132,6 +172,18 @@ export default function LlamadasIA() {
   const [quickPhone, setQuickPhone] = useState('');
   const [loadingQuickCall, setLoadingQuickCall] = useState(false);
   const [expandedCall, setExpandedCall] = useState<string | null>(null);
+
+  // ---- Agentes especializados ----
+  const [agentTab, setAgentTab] = useState<AgentTab>('vinculacion');
+  const [agentNumbers, setAgentNumbers] = useState<Record<AgentTab, string>>({
+    vinculacion: '', soporte: '', ventas: '', linea: ''
+  });
+  const [agentPhone, setAgentPhone] = useState<Record<AgentTab, string>>({
+    vinculacion: '', soporte: '', ventas: '', linea: ''
+  });
+  const [agentLoading, setAgentLoading] = useState<Record<AgentTab, boolean>>({
+    vinculacion: false, soporte: false, ventas: false, linea: false
+  });
 
   const parseContacts = (t: string) =>
     t.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
@@ -292,6 +344,30 @@ export default function LlamadasIA() {
       loadCampaigns();
       loadCalls();
     }
+  };
+
+  const handleAgentCall = async (agId: AgentTab) => {
+    const agent = SPECIALIZED_AGENTS.find(a => a.id === agId)!;
+    const numbersRaw = agentNumbers[agId];
+    const phoneId = agentPhone[agId];
+    if (!numbersRaw.trim()) return toast({ title: 'Ingresa al menos un número', variant: 'destructive' });
+    if (!phoneId) return toast({ title: 'Selecciona un número de origen', variant: 'destructive' });
+    if (!agent.vapiId) return toast({ title: 'Agente no configurado', description: 'El ID del agente VAPI aún no está configurado para esta sección.', variant: 'destructive' });
+    const destinations = numbersRaw.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+    setAgentLoading(prev => ({ ...prev, [agId]: true }));
+    let errors = 0;
+    for (const dest of destinations) {
+      const res = await callFn('vapi-call', { destination: dest, assistantId: agent.vapiId, phoneNumberId: phoneId });
+      if (!res.success) errors++;
+    }
+    setAgentLoading(prev => ({ ...prev, [agId]: false }));
+    if (errors === 0) {
+      toast({ title: `✅ ${destinations.length} llamada(s) iniciadas`, description: `Agente: ${agent.label}` });
+      setAgentNumbers(prev => ({ ...prev, [agId]: '' }));
+    } else {
+      toast({ title: `⚠️ ${errors} llamada(s) fallaron`, description: 'Revisa el historial para más detalles.', variant: 'destructive' });
+    }
+    loadCalls();
   };
 
   const handleQuickCall = async () => {
@@ -582,55 +658,297 @@ export default function LlamadasIA() {
           </div>
         )}
         {activeTab === 'calls' && (
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle>Llamada Rápida</CardTitle>
-              <CardDescription>Inicia una llamada individual usando un asistente ya creado.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Número destino</Label>
-                <Input value={quickDest} onChange={e => setQuickDest(e.target.value)} placeholder="+15551234567" />
-              </div>
-              <div className="space-y-2">
-                <Label>Asistente</Label>
-                <select
-                  value={quickAssistant}
-                  onChange={e => setQuickAssistant(e.target.value)}
-                  className="w-full p-2 rounded-md bg-background border border-border text-foreground text-sm"
+          <div className="space-y-5">
+            {/* Sub-tabs de agentes */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {SPECIALIZED_AGENTS.map(ag => (
+                <button
+                  key={ag.id}
+                  onClick={() => setAgentTab(ag.id)}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all font-medium text-sm ${
+                    agentTab === ag.id
+                      ? `${ag.bg} ${ag.color} border-current shadow-md scale-[1.02]`
+                      : 'border-border text-muted-foreground hover:border-border/80 hover:bg-muted/40'
+                  }`}
                 >
-                  <option value="">— Selecciona un asistente —</option>
-                  {assistants.map(a => (
-                    <option key={a.vapi_assistant_id} value={a.vapi_assistant_id}>
-                      {a.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-2">
-                <Label>Número de origen</Label>
-                <select
-                  value={quickPhone}
-                  onChange={e => setQuickPhone(e.target.value)}
-                  className="w-full p-2 rounded-md bg-background border border-border text-foreground text-sm"
-                >
-                  <option value="">— Selecciona un número —</option>
-                  {phoneNumbers.map(n => (
-                    <option key={n.vapi_phone_number_id} value={n.vapi_phone_number_id}>
-                      {n.friendly_name} {n.phone_number ? `(${n.phone_number})` : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <Button onClick={handleQuickCall} disabled={loadingQuickCall} className="w-full">
-                {loadingQuickCall ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Iniciando...</>
-                ) : (
-                  <><PhoneCall className="mr-2 h-4 w-4" />Iniciar llamada</>
-                )}
-              </Button>
-            </CardContent>
-          </Card>
+                  <span className={`p-2 rounded-full ${agentTab === ag.id ? ag.bg : 'bg-muted'}`}>
+                    {ag.icon}
+                  </span>
+                  <span className="text-center leading-tight">{ag.label}</span>
+                  {ag.vapiId && (
+                    <span className="text-[10px] opacity-60 font-mono">{ag.vapiId.substring(0,8)}…</span>
+                  )}
+                  {!ag.vapiId && (
+                    <span className="text-[10px] text-amber-400 font-semibold">Sin configurar</span>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Panel del agente activo */}
+            {SPECIALIZED_AGENTS.filter(ag => ag.id === agentTab).map(ag => (
+              <Card key={ag.id} className={`border-2 ${ag.bg}`}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-3">
+                    <span className={`p-2 rounded-lg ${ag.bg} ${ag.color}`}>{ag.icon}</span>
+                    <div>
+                      <CardTitle className={ag.color}>{ag.label}</CardTitle>
+                      <CardDescription className="mt-0.5">{ag.description}</CardDescription>
+                    </div>
+                  </div>
+                  {ag.vapiId && (
+                    <div className="mt-2 flex items-center gap-2 bg-background/60 rounded-lg px-3 py-2">
+                      <Bot className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">Agent ID:</span>
+                      <code className="text-xs font-mono text-foreground">{ag.vapiId}</code>
+                      <span className="ml-auto text-[10px] bg-green-500/20 text-green-400 border border-green-500/30 px-2 py-0.5 rounded-full font-semibold">PUBLICADO</span>
+                    </div>
+                  )}
+                  {!ag.vapiId && (
+                    <div className="mt-2 flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">
+                      <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
+                      <span className="text-xs text-amber-400">Agente VAPI pendiente de configurar — ingresa el ID en el código.</span>
+                    </div>
+                  )}
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Números a llamar */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label>Números a llamar *</Label>
+                      <label htmlFor={`file-${ag.id}`} className="cursor-pointer">
+                        <span className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                          <Upload className="h-3 w-3" /> Subir CSV/TXT
+                        </span>
+                        <input
+                          id={`file-${ag.id}`}
+                          type="file"
+                          accept=".csv,.txt"
+                          className="hidden"
+                          onChange={e => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            if (file.name.endsWith('.csv')) {
+                              Papa.parse(file, { complete: (r) => {
+                                const nums = (r.data as any[]).map((row: any) => row[0]).filter(Boolean);
+                                setAgentNumbers(prev => ({ ...prev, [ag.id]: prev[ag.id as AgentTab] ? `${prev[ag.id as AgentTab]}\n${nums.join('\n')}` : nums.join('\n') }));
+                              }});
+                            } else {
+                              const reader = new FileReader();
+                              reader.onload = ev => setAgentNumbers(prev => ({ ...prev, [ag.id]: prev[ag.id as AgentTab] ? `${prev[ag.id as AgentTab]}\n${ev.target?.result}` : ev.target?.result as string }));
+                              reader.readAsText(file);
+                            }
+                            e.target.value = '';
+                          }}
+                        />
+                      </label>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Un número por línea en formato E.164 (+525551234567). También acepta separados por coma.</p>
+                    <textarea
+                      value={agentNumbers[ag.id]}
+                      onChange={e => setAgentNumbers(prev => ({ ...prev, [ag.id]: e.target.value }))}
+                      placeholder={`+525551234567\n+525559876543`}
+                      className="w-full min-h-[110px] p-3 rounded-md bg-background border border-border text-foreground text-sm font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    />
+                    {agentNumbers[ag.id].split(/[\n,]+/).map(s => s.trim()).filter(Boolean).length > 0 && (
+                      <p className={`text-sm font-medium ${ag.color}`}>
+                        {agentNumbers[ag.id].split(/[\n,]+/).map(s => s.trim()).filter(Boolean).length} número(s) detectado(s)
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Número de origen */}
+                  <div className="space-y-2">
+                    <Label>Número de origen (VAPI) *</Label>
+                    {phoneNumbers.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        Sin números.{' '}
+                        <button onClick={syncPhoneNumbers} className="text-primary underline">Sincronizar</button>
+                      </p>
+                    ) : (
+                      <select
+                        value={agentPhone[ag.id]}
+                        onChange={e => setAgentPhone(prev => ({ ...prev, [ag.id]: e.target.value }))}
+                        className="w-full p-2 rounded-md bg-background border border-border text-foreground text-sm"
+                      >
+                        <option value="">— Selecciona un número —</option>
+                        {phoneNumbers.map(n => (
+                          <option key={n.vapi_phone_number_id} value={n.vapi_phone_number_id}>
+                            {n.friendly_name} {n.phone_number ? `(${n.phone_number})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+
+                  <Button
+                    onClick={() => handleAgentCall(ag.id)}
+                    disabled={agentLoading[ag.id] || !ag.vapiId}
+                    className="w-full h-11 text-base font-semibold"
+                  >
+                    {agentLoading[ag.id] ? (
+                      <><Loader2 className="mr-2 h-5 w-5 animate-spin" />Realizando llamadas...</>
+                    ) : (
+                      <><PhoneCall className="mr-2 h-5 w-5" />Llamar ahora — {ag.label}</>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+
+            {/* Nueva Sección: Resúmenes y Análisis de Resultados por Agente */}
+            {SPECIALIZED_AGENTS.filter(ag => ag.id === agentTab).map(ag => {
+              const agentCalls = calls.filter(c => c.assistant_id === ag.vapiId);
+              const totalCalls = agentCalls.length;
+              const completedCalls = agentCalls.filter(c => c.status === 'completed').length;
+              const failedCalls = agentCalls.filter(c => c.status === 'failed').length;
+              const avgDuration = agentCalls.filter(c => c.duration_seconds).reduce((acc, c) => acc + (c.duration_seconds ?? 0), 0) / (agentCalls.filter(c => c.duration_seconds).length || 1);
+
+              return (
+                <div key={`analysis-${ag.id}`} className="space-y-4 mt-6">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-xl font-bold flex items-center gap-2">
+                      <BarChart3 className={`h-5 w-5 ${ag.color}`} />
+                      Resultados y Análisis de {ag.label}
+                    </h3>
+                    <Button variant="outline" size="sm" onClick={loadCalls} disabled={loadingCalls}>
+                      <RefreshCw className={`h-3 w-3 mr-2 ${loadingCalls ? 'animate-spin' : ''}`} />
+                      Actualizar Análisis
+                    </Button>
+                  </div>
+
+                  {!ag.vapiId ? (
+                    <Card className="border-border">
+                      <CardContent className="p-8 text-center text-muted-foreground">
+                        Por favor, configura el ID del agente VAPI para ver el análisis de resultados.
+                      </CardContent>
+                    </Card>
+                  ) : totalCalls === 0 ? (
+                    <Card className="border-border">
+                      <CardContent className="p-8 text-center text-muted-foreground">
+                        Aún no se registran llamadas en el sistema para este agente ({ag.label}). Realiza una llamada para generar estadísticas.
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <>
+                      {/* Métricas del Agente Activo */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="bg-background border border-border p-4 rounded-xl space-y-1">
+                          <p className="text-xs text-muted-foreground font-medium uppercase">Llamadas Totales</p>
+                          <p className="text-2xl font-bold">{totalCalls}</p>
+                        </div>
+                        <div className="bg-background border border-border p-4 rounded-xl space-y-1">
+                          <p className="text-xs text-muted-foreground font-medium uppercase">Completadas con Éxito</p>
+                          <p className="text-2xl font-bold text-emerald-400">{completedCalls}</p>
+                        </div>
+                        <div className="bg-background border border-border p-4 rounded-xl space-y-1">
+                          <p className="text-xs text-muted-foreground font-medium uppercase">Duración Promedio</p>
+                          <p className="text-2xl font-bold text-blue-400">{Math.round(avgDuration)}s</p>
+                        </div>
+                        <div className="bg-background border border-border p-4 rounded-xl space-y-1">
+                          <p className="text-xs text-muted-foreground font-medium uppercase">Tasa de Efectividad</p>
+                          <p className="text-2xl font-bold text-purple-400">
+                            {Math.round((completedCalls / totalCalls) * 100)}%
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Análisis de Resultados Detallados de VAPI */}
+                      <div className="grid md:grid-cols-3 gap-6">
+                        {/* Listado de llamadas con análisis */}
+                        <div className="md:col-span-2 space-y-3">
+                          <h4 className="text-sm font-semibold text-muted-foreground">Detalle de Interacciones Recientes</h4>
+                          <div className="space-y-3">
+                            {agentCalls.map(c => (
+                              <Card key={c.id} className="border-border hover:border-muted-foreground/30 transition-all">
+                                <CardContent className="p-4 space-y-3">
+                                  <div className="flex justify-between items-start gap-2">
+                                    <div>
+                                      <p className="font-semibold text-sm">{c.destination}</p>
+                                      <p className="text-xs text-muted-foreground">
+                                        {new Date(c.created_at).toLocaleString('es-MX')} · {c.duration_seconds ? `${c.duration_seconds}s` : 'Sin duración'}
+                                      </p>
+                                    </div>
+                                    <StatusBadge status={c.status} />
+                                  </div>
+
+                                  {c.summary && (
+                                    <div className="bg-muted/30 p-2.5 rounded-lg border border-border/50">
+                                      <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Resumen de Vapi</p>
+                                      <p className="text-xs text-foreground leading-relaxed">{c.summary}</p>
+                                    </div>
+                                  )}
+
+                                  {c.ended_reason && (
+                                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/20 px-2 py-1 rounded w-fit">
+                                      <span className="font-semibold">Razón fin:</span>
+                                      <span className="font-mono text-[11px]">{c.ended_reason}</span>
+                                    </div>
+                                  )}
+
+                                  {c.recording_url && (
+                                    <div className="pt-1 flex items-center justify-between">
+                                      <audio src={c.recording_url} controls className="h-8 max-w-full" />
+                                    </div>
+                                  )}
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Análisis de Tendencias y Resultados */}
+                        <div className="space-y-4">
+                          <h4 className="text-sm font-semibold text-muted-foreground">Análisis de la IA</h4>
+                          <Card className="border-border">
+                            <CardHeader className="p-4 pb-2">
+                              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                                <Bot className="h-4 w-4 text-primary" />
+                                Diagnóstico de Interacción
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-4 pt-0 space-y-4 text-xs">
+                              {/* Motivos de Finalización Comunes */}
+                              <div className="space-y-2">
+                                <p className="font-medium text-muted-foreground uppercase text-[10px]">Patrones de Cierre de Llamada</p>
+                                <div className="space-y-1">
+                                  {Array.from(new Set(agentCalls.map(c => c.ended_reason).filter(Boolean))).map(reason => {
+                                    const count = agentCalls.filter(c => c.ended_reason === reason).length;
+                                    const percentage = Math.round((count / totalCalls) * 100);
+                                    return (
+                                      <div key={reason} className="flex justify-between items-center bg-muted/40 px-2 py-1 rounded">
+                                        <span className="font-mono truncate max-w-[150px]">{reason}</span>
+                                        <span className="font-semibold">{percentage}% ({count})</span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+
+                              {/* Análisis de Resultados del Agente */}
+                              <div className="space-y-2 pt-2 border-t border-border">
+                                <p className="font-medium text-muted-foreground uppercase text-[10px]">Indicadores Clave VAPI</p>
+                                <div className="space-y-2">
+                                  <div className="flex justify-between">
+                                    <span>Tasa de Respuesta:</span>
+                                    <span className="font-bold">{Math.round((agentCalls.filter(c => c.status !== 'failed').length / totalCalls) * 100)}%</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span>Llamadas &gt; 30 Segundos:</span>
+                                    <span className="font-bold">{Math.round((agentCalls.filter(c => (c.duration_seconds ?? 0) > 30).length / totalCalls) * 100)}%</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         )}
 
         {/* ========== TAB: HISTORIAL ========== */}

@@ -23,18 +23,30 @@ serve(async (req) => {
       );
     }
 
-    // Llamar a VAPI para iniciar la llamada
+    // Limpiar y formatear a formato estricto E.164 (+ y solo dígitos)
+    let cleanDestination = destination.trim();
+    const hasPlus = cleanDestination.startsWith("+");
+    const digitsOnly = cleanDestination.replace(/\D/g, "");
+    cleanDestination = hasPlus ? `+${digitsOnly}` : `+${digitsOnly}`;
+
+    // Build VAPI outbound call payload
+    const vapiPayload: Record<string, any> = {
+      assistantId,
+      phoneNumberId,
+      customer: {
+        number: cleanDestination,
+      },
+    };
+
+    console.log('VAPI call payload:', JSON.stringify(vapiPayload));
+
     const vapiResp = await fetch("https://api.vapi.ai/call", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${Deno.env.get("VAPI_KEY")}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        assistantId,
-        phoneNumberId,
-        customer: { number: destination },
-      }),
+      body: JSON.stringify(vapiPayload),
     });
 
     if (!vapiResp.ok) {

@@ -37,19 +37,27 @@ serve(async (req) => {
     let firstError = null;
     for (const phone of contacts) {
       try {
+        // Limpiar y formatear a formato estricto E.164 (+ y solo dígitos)
+        let cleanPhone = phone.trim();
+        const hasPlus = cleanPhone.startsWith("+");
+        const digitsOnly = cleanPhone.replace(/\D/g, "");
+        cleanPhone = hasPlus ? `+${digitsOnly}` : `+${digitsOnly}`;
+
+        const vapiPayload = {
+          assistantId: campaign.assistant_id,
+          phoneNumberId: campaign.phone_number_id,
+          customer: {
+            number: cleanPhone,
+          },
+        };
+
         const vapiResp = await fetch("https://api.vapi.ai/call", {
           method: "POST",
           headers: {
             Authorization: `Bearer ${Deno.env.get("VAPI_KEY")}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            assistantId: campaign.assistant_id,
-            phoneNumberId: campaign.phone_number_id,
-            customer: { number: phone },
-            // Algunos servidores de Vapi prefieren este campo plano:
-            customerNumber: phone 
-          }),
+          body: JSON.stringify(vapiPayload),
         });
 
         if (!vapiResp.ok) {
