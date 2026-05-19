@@ -61,18 +61,9 @@ interface VapiCall {
 interface AttachmentFile { file: File; name: string; }
 
 type ActiveTab = 'create' | 'campaigns' | 'calls' | 'history';
-type AgentTab = 'vinculacion' | 'soporte' | 'ventas' | 'linea';
+type AgentTab = 'soporte' | 'ventas' | 'linea';
 
 const SPECIALIZED_AGENTS: { id: AgentTab; label: string; vapiId: string; color: string; bg: string; icon: React.ReactNode; description: string }[] = [
-  {
-    id: 'vinculacion',
-    label: 'Campaña de Vinculación',
-    vapiId: '',
-    color: 'text-blue-400',
-    bg: 'bg-blue-500/10 border-blue-500/30',
-    icon: <Users className="h-4 w-4" />,
-    description: 'Llama a prospectos para establecer un primer contacto y vincularlos como clientes.'
-  },
   {
     id: 'soporte',
     label: 'Conversación de Soporte',
@@ -179,15 +170,15 @@ export default function LlamadasIA() {
   const [syncingCallId, setSyncingCallId] = useState<string | null>(null);
 
   // ---- Agentes especializados ----
-  const [agentTab, setAgentTab] = useState<AgentTab>('vinculacion');
+  const [agentTab, setAgentTab] = useState<AgentTab>('soporte');
   const [agentNumbers, setAgentNumbers] = useState<Record<AgentTab, string>>({
-    vinculacion: '', soporte: '', ventas: '', linea: ''
+    soporte: '', ventas: '', linea: ''
   });
   const [agentPhone, setAgentPhone] = useState<Record<AgentTab, string>>({
-    vinculacion: '', soporte: '', ventas: '', linea: ''
+    soporte: '', ventas: '', linea: ''
   });
   const [agentLoading, setAgentLoading] = useState<Record<AgentTab, boolean>>({
-    vinculacion: false, soporte: false, ventas: false, linea: false
+    soporte: false, ventas: false, linea: false
   });
 
   const parseContacts = (t: string) =>
