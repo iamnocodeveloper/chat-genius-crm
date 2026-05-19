@@ -46,11 +46,15 @@ interface VapiCall {
   vapi_call_id: string;
   destination: string;
   status: string;
+  started_at?: string | null;
+  ended_at?: string | null;
   duration_seconds: number | null;
   summary: string | null;
   transcript: string | null;
   recording_url: string | null;
   ended_reason: string | null;
+  intent?: any | null;
+  raw_event?: any | null;
   created_at: string;
 }
 
@@ -89,12 +93,12 @@ const SPECIALIZED_AGENTS: { id: AgentTab; label: string; vapiId: string; color: 
   },
   {
     id: 'linea',
-    label: 'Problemas de Línea',
-    vapiId: '',
+    label: 'Vinculación de Líneas',
+    vapiId: '660b64e7-51ff-4dee-8557-f819c2821938',
     color: 'text-red-400',
     bg: 'bg-red-500/10 border-red-500/30',
     icon: <AlertTriangle className="h-4 w-4" />,
-    description: 'Atiende reportes de fallas o problemas con el servicio de línea.'
+    description: 'Gestiona y atiende procesos relacionados con la vinculación de líneas.'
   },
 ];
 
@@ -172,6 +176,7 @@ export default function LlamadasIA() {
   const [quickPhone, setQuickPhone] = useState('');
   const [loadingQuickCall, setLoadingQuickCall] = useState(false);
   const [expandedCall, setExpandedCall] = useState<string | null>(null);
+  const [syncingCallId, setSyncingCallId] = useState<string | null>(null);
 
   // ---- Agentes especializados ----
   const [agentTab, setAgentTab] = useState<AgentTab>('vinculacion');
@@ -243,6 +248,23 @@ export default function LlamadasIA() {
     const { data } = await supabase.from('vapi_calls').select('*').order('created_at', { ascending: false }).limit(50);
     if (data) setCalls(data as VapiCall[]);
     setLoadingCalls(false);
+  };
+
+  const syncCallDetails = async (callId: string) => {
+    setSyncingCallId(callId);
+    try {
+      const res = await callFn('vapi-callback', { mode: 'sync', callId });
+      if (res?.received) {
+        toast({ title: 'Sincronizado', description: 'Se actualizaron los detalles desde VAPI.' });
+        await loadCalls();
+      } else {
+        toast({ title: 'Error', description: res?.error || 'No se pudo sincronizar con VAPI.', variant: 'destructive' });
+      }
+    } catch (e: any) {
+      toast({ title: 'Error', description: e?.message || 'No se pudo sincronizar con VAPI.', variant: 'destructive' });
+    } finally {
+      setSyncingCallId(null);
+    }
   };
 
   const syncPhoneNumbers = async () => {
@@ -997,6 +1019,61 @@ export default function LlamadasIA() {
 
                       {expandedCall === call.id && (
                         <div className="border-t border-border p-4 space-y-3 bg-muted/30">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="text-xs text-muted-foreground">
+                              {call.vapi_call_id ? <span className="font-mono">{call.vapi_call_id}</span> : null}
+                            </div>
+                            {call.vapi_call_id && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); syncCallDetails(call.vapi_call_id); }}
+                                disabled={syncingCallId === call.vapi_call_id}
+                              >
+                                <RefreshCw className={`h-3 w-3 mr-2 ${syncingCallId === call.vapi_call_id ? 'animate-spin' : ''}`} />
+                                Sincronizar con VAPI
+                              </Button>
+                            )}
+                          </div>
+
+                          {(() => {
+                            const analysis = (call.raw_event as any)?.analysis ?? call.intent ?? null;
+                            const sentiment = analysis?.sentiment?.overall ?? analysis?.sentiment?.label ?? analysis?.sentiment ?? null;
+                            const sentimentScore = analysis?.sentiment?.score ?? analysis?.sentiment?.overallScore ?? null;
+                            const cost = (call.raw_event as any)?.cost ?? (call.raw_event as any)?.costs?.total ?? (call.raw_event as any)?.billing?.totalCost ?? null;
+                            const duration = (call.raw_event as any)?.durationSeconds ?? (call.raw_event as any)?.duration ?? call.duration_seconds ?? null;
+                            const endedReason = (call.raw_event as any)?.endedReason ?? call.ended_reason ?? null;
+
+                            if (!analysis && !(call.raw_event as any)) return null;
+
+                            return (
+                              <div className="space-y-2">
+                                <p className="text-xs font-semibold text-muted-foreground mb-1">MÉTRICAS (VAPI)</p>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                  <div className="p-2 rounded-md border border-border bg-background">
+                                    <p className="text-[10px] text-muted-foreground uppercase">Duración</p>
+                                    <p className="text-sm font-semibold">{duration != null ? `${duration}s` : '—'}</p>
+                                  </div>
+                                  <div className="p-2 rounded-md border border-border bg-background">
+                                    <p className="text-[10px] text-muted-foreground uppercase">Sentimiento</p>
+                                    <p className="text-sm font-semibold">
+                                      {sentiment != null ? String(sentiment) : '—'}
+                                      {sentimentScore != null ? <span className="text-xs text-muted-foreground"> · {String(sentimentScore)}</span> : null}
+                                    </p>
+                                  </div>
+                                  <div className="p-2 rounded-md border border-border bg-background">
+                                    <p className="text-[10px] text-muted-foreground uppercase">Costo</p>
+                                    <p className="text-sm font-semibold">{cost != null ? String(cost) : '—'}</p>
+                                  </div>
+                                  <div className="p-2 rounded-md border border-border bg-background">
+                                    <p className="text-[10px] text-muted-foreground uppercase">Cierre</p>
+                                    <p className="text-sm font-semibold">{endedReason != null ? String(endedReason) : '—'}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })()}
+
                           {call.summary && (
                             <div>
                               <p className="text-xs font-semibold text-muted-foreground mb-1">RESUMEN</p>
@@ -1021,6 +1098,15 @@ export default function LlamadasIA() {
                             >
                               <Play className="h-4 w-4" /> Reproducir grabación
                             </a>
+                          )}
+
+                          {call.raw_event && (
+                            <div>
+                              <p className="text-xs font-semibold text-muted-foreground mb-1">DATOS COMPLETOS (VAPI)</p>
+                              <pre className="text-xs whitespace-pre-wrap max-h-64 overflow-y-auto p-3 rounded-md border border-border bg-background">
+                                {JSON.stringify(call.raw_event, null, 2)}
+                              </pre>
+                            </div>
                           )}
                         </div>
                       )}

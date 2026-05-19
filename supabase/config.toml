@@ -2,3 +2,6 @@ project_id = "owxkdodbgqtnhdnrspqp"
 
 [functions.webhook-email]
 verify_jwt = false
+
+[functions.vapi-callback]
+verify_jwt = false
