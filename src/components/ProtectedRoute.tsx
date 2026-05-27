@@ -12,9 +12,10 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireSuperAdmin?: boolean;
+  noPadding?: boolean;
 }
 
-const ProtectedRoute = ({ children, requireSuperAdmin = false }: ProtectedRouteProps) => {
+const ProtectedRoute = ({ children, requireSuperAdmin = false, noPadding = false }: ProtectedRouteProps) => {
   const { user, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading, error: profileError, retrying, retryCount, isSuperAdmin, isClient, isImpersonating, refetchProfile } = useProfile();
   const location = useLocation();
@@ -115,7 +116,7 @@ const ProtectedRoute = ({ children, requireSuperAdmin = false }: ProtectedRouteP
   } else if (isSuperAdmin && isImpersonating) {
     return <SuperAdminImpersonationLayout><ErrorBoundary>{children}</ErrorBoundary></SuperAdminImpersonationLayout>;
   } else {
-    return <AppLayout><ErrorBoundary>{children}</ErrorBoundary></AppLayout>;
+    return <AppLayout noPadding={noPadding}><ErrorBoundary>{children}</ErrorBoundary></AppLayout>;
   }
 };
 
