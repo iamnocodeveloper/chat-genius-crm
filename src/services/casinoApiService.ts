@@ -40,7 +40,7 @@ export async function getCasinoConfigForWorkspace(workspaceId: string): Promise<
 
     if (!workspace?.casino_api_config_id) return null;
 
-    const { data: config } = await (supabase as any)
+    const { data: config } = await supabase
       .from('casino_api_configs')
       .select('*')
       .eq('id', workspace.casino_api_config_id)

@@ -27,7 +27,6 @@ import { Mail, Plus, Inbox, RefreshCw, Eye, ArrowLeft, Send, Reply, Trash2, Save
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { Database } from '@/integrations/supabase/types';
-import { SignatureEditor } from '@/components/email/SignatureEditor';
 
 type EmailInbox = Database['public']['Tables']['email_inboxes']['Row'];
 type EmailMessage = Database['public']['Tables']['email_messages']['Row'];
@@ -36,11 +35,11 @@ const stripHtml = (value: string) => value.replace(/<[^>]*>?/gm, ' ').replace(/\
 
 const escapeHtml = (value: string) =>
   value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
 
 const normalizeSubjectForReply = (subject: string) => {
   const trimmed = subject.trim();
@@ -358,8 +357,8 @@ export default function EmailInboxes() {
 
   if (selectedInbox) {
     return (
-      <div className="min-h-full bg-background p-3 md:p-6">
-        <div className="w-full space-y-6">
+      <div className="min-h-screen bg-background p-6">
+        <div className="max-w-6xl mx-auto space-y-6">
           <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" onClick={() => setSelectedInbox(null)}>
               <ArrowLeft className="h-4 w-4" />
@@ -617,7 +616,12 @@ export default function EmailInboxes() {
               </div>
               <div className="space-y-2">
                 <Label>Firma</Label>
-                <SignatureEditor value={signatureText} onChange={setSignatureText} />
+                <Textarea
+                  placeholder="Escribe tu firma para esta bandeja..."
+                  className="min-h-[120px]"
+                  value={signatureText}
+                  onChange={(e) => setSignatureText(e.target.value)}
+                />
               </div>
             </CardContent>
           </Card>
@@ -674,8 +678,8 @@ export default function EmailInboxes() {
   }
 
   return (
-    <div className="min-h-full bg-background p-3 md:p-6">
-      <div className="w-full space-y-6">
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-6xl mx-auto space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
             <Mail className="h-8 w-8 text-primary" />

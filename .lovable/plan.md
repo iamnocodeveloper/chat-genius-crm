@@ -1,34 +1,106 @@
-# Editor de firma de email mejorado
+# Plan: notificaciones clicables, sonido e indicadores de mensajes sin leer
 
-Mejorar el campo "Firma" en `src/pages/EmailInboxes.tsx` (línea ~618) reemplazando el `Textarea` plano por un componente con tres modos en pestañas y plantillas listas para usar.
+## Objetivo
 
-## Componente nuevo
+Mejorar la atención del usuario cuando llega un mensaje nuevo:
 
-Crear `src/components/email/SignatureEditor.tsx` con `Tabs` de shadcn:
+- Al hacer click en una notificación del topbar, abrir esa conversación dentro de Embudos.
+- Reproducir un sonido breve al recibir mensajes entrantes.
+- Hacer más visibles las conversaciones y mensajes sin leer en Conversaciones y Embudos.
 
-1. **Rich Text** (por defecto)
-   - Editor WYSIWYG con `contentEditable` controlado y barra de herramientas: negritas, cursiva, subrayado, enlace, lista, alineación, color, tamaño, limpiar formato.
-   - Usa `document.execCommand` (consistente y sin nuevas dependencias pesadas) y sincroniza el HTML resultante con el estado.
+## Cambios propuestos
 
-2. **HTML**
-   - Editor de código con `Textarea` de fuente monoespaciada + resaltado simple (className `font-mono`), botón "Formatear" y validación básica de etiquetas.
-   - Detecta automáticamente si la firma actual contiene `<` y `>` para sugerir este modo.
+### 1. Notificación del topbar clicable hacia Embudos
 
-3. **Vista previa**
-   - Renderiza la firma en un contenedor aislado (`iframe` con `sandbox` para evitar ejecución de scripts) tal como se verá en un correo.
+Actualizar el panel de campana en `Header` para que cada conversación de la lista sea clicable.
 
-## Plantillas predefinidas
+Comportamiento:
 
-Botón "Usar plantilla" que abre un `Popover` con 4 firmas HTML listas (minimalista, corporativa con logo placeholder, con redes sociales, una sola línea). Al elegir una, rellena el editor en modo HTML.
+- Click en una notificación abre `/leads`.
+- La pantalla de Embudos busca la conversación indicada.
+- Si la conversación ya tiene lead asociado, abre el modal de chat de esa tarjeta.
+- Si no encuentra la tarjeta visible por filtros/paginación, intenta cargar la conversación directamente y abre el chat igualmente.
+- Al abrirse, se marca como leída usando el flujo existente.
 
-## Integración
+Esto evita mandar al usuario a la pantalla general de conversaciones; lo lleva a Embudos como pediste.
 
-En `EmailInboxes.tsx`:
-- Reemplazar el `<Textarea>` de firma por `<SignatureEditor value={signatureText} onChange={setSignatureText} />`.
-- El valor sigue guardándose en `signature_text` como string (HTML o texto plano según el modo usado), sin tocar el guardado existente en `handleSaveInbox`.
+### 2. Soporte en Embudos para abrir conversación desde navegación
 
-## Notas técnicas
+Actualizar `Leads.tsx` para leer `location.state.conversationId` al entrar desde el topbar.
 
-- Sin dependencias nuevas: se usa `contentEditable` + `execCommand` y componentes shadcn ya disponibles (`Tabs`, `Popover`, `Button`, `Textarea`, `Toggle`).
-- El `iframe` de previsualización usa `srcDoc` con `sandbox=""` (sin permisos) por seguridad.
-- Diseño con tokens semánticos del design system, sin colores hardcoded.
+Flujo técnico:
+
+```text
+Header notification click
+  -> navigate('/leads', { state: { conversationId } })
+  -> Leads detecta conversationId
+  -> busca lead/conversación
+  -> abre ChatModal
+  -> markAsRead(conversationId)
+```
+
+También se limpiará el estado de navegación luego de abrir para evitar reaperturas accidentales al refrescar o cambiar filtros.
+
+### 3. Sonido al recibir mensajes
+
+Agregar un sonido ligero cuando llegue un mensaje entrante por realtime.
+
+Detalles:
+
+- Solo sonará para mensajes `inbound` / `incoming`.
+- No sonará para mensajes salientes ni mensajes enviados por el propio usuario.
+- Se evitará que suene en la primera carga de datos; solo en eventos realtime nuevos.
+- Se controlará el error típico de navegador cuando no permite audio hasta que el usuario interactúa con la página.
+- Usaré Web Audio API para generar un tono corto, sin depender de archivos externos.
+
+Opcionalmente, si el navegador bloquea el audio, no romperá la app; simplemente no sonará hasta que haya interacción del usuario.
+
+### 4. Mejoras visuales para no leídos en Conversaciones
+
+En `ConversationList` reforzar las conversaciones con `unread_count > 0`:
+
+- Fondo sutil destacado.
+- Borde izquierdo en color primario/destructivo.
+- Nombre del contacto en negrita.
+- Último mensaje con mayor contraste.
+- Badge de cantidad sin leer más visible.
+- Ícono/punto indicador para identificar rápido que requiere atención.
+
+Manteniendo la virtualización actual para no afectar rendimiento.
+
+### 5. Mejoras visuales para no leídos en Embudos / Kanban
+
+En `KanbanBoard`, reforzar las tarjetas con conversaciones sin leer:
+
+- Borde lateral o ring visual en tarjetas con `unread_count > 0`.
+- Fondo sutil destacado.
+- Badge de no leídos más visible.
+- Texto del último mensaje con más contraste/negrita cuando hay mensajes sin leer.
+- Mantener el indicador existente de `Nuevo` para virtual leads sin mezclarlo con el estado sin leer.
+
+### 6. Ajuste de lista de notificaciones
+
+Mejorar el menú de campana:
+
+- Cursor y hover claro en cada item.
+- Mostrar nombre, último mensaje, fecha y badge de no leídos.
+- Cerrar el dropdown al seleccionar una notificación.
+- Mantener botón “Limpiar” solo como limpieza visual local, sin borrar datos reales.
+
+## Archivos a modificar
+
+- `src/components/layout/Header.tsx`
+- `src/pages/Leads.tsx`
+- `src/components/KanbanBoard.tsx`
+- `src/components/conversations/ConversationList.tsx`
+- Posible helper nuevo, por ejemplo `src/lib/notificationSound.ts`, para aislar la lógica de audio.
+
+## Validación
+
+Después de implementar:
+
+- Ejecutar build para asegurar que no haya errores TypeScript.
+- Verificar que el click en la campana navegue a `/leads` y abra el chat correcto.
+- Verificar que al abrir se marque como leído.
+- Verificar que el sonido solo intente reproducirse en mensajes entrantes nuevos.
+- Verificar que los indicadores visuales se vean tanto en Conversaciones como en Embudos sin romper la virtualización ni el drag-and-drop.

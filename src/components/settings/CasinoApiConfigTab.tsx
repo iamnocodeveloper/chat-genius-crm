@@ -48,7 +48,7 @@ const CasinoApiConfigTab = () => {
 
   const loadConfigs = async () => {
     setLoading(true);
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('casino_api_configs')
       .select('*')
       .order('created_at');
@@ -95,7 +95,7 @@ const CasinoApiConfigTab = () => {
     };
 
     if (editing) {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('casino_api_configs')
         .update(payload)
         .eq('id', editing.id);
@@ -105,7 +105,7 @@ const CasinoApiConfigTab = () => {
       }
       toast({ title: 'Actualizado', description: 'Configuración actualizada correctamente' });
     } else {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('casino_api_configs')
         .insert({ ...payload, user_id: effectiveUserId });
       if (error) {
@@ -120,7 +120,7 @@ const CasinoApiConfigTab = () => {
   };
 
   const handleDelete = async (id: string) => {
-    const { error } = await (supabase as any).from('casino_api_configs').delete().eq('id', id);
+    const { error } = await supabase.from('casino_api_configs').delete().eq('id', id);
     if (error) {
       toast({ title: 'Error', description: 'No se pudo eliminar', variant: 'destructive' });
       return;
@@ -130,7 +130,7 @@ const CasinoApiConfigTab = () => {
   };
 
   const handleToggleActive = async (config: CasinoApiConfig) => {
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('casino_api_configs')
       .update({ is_active: !config.is_active })
       .eq('id', config.id);

@@ -147,7 +147,7 @@ const App = () => (
                 </ProtectedRoute>
               } />
               <Route path="/bandejas-email" element={
-                <ProtectedRoute noPadding>
+                <ProtectedRoute>
                   <EmailInboxes />
                 </ProtectedRoute>
               } />

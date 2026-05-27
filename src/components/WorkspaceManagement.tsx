@@ -102,14 +102,14 @@ const WorkspaceManagement = () => {
   };
 
   const loadCasinoApiConfigs = async () => {
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('casino_api_configs')
       .select('id, name')
       .eq('user_id', effectiveUserId)
       .eq('is_active', true);
 
     if (!error && data) {
-      setCasinoApiConfigs(data as { id: string; name: string }[]);
+      setCasinoApiConfigs(data);
     }
   };
 
