@@ -93,7 +93,7 @@ export class ConversationService {
         throw error;
       }
 
-      return data || [];
+      return (data as unknown as ConversationWithLastMessage[]) || [];
     } catch (error) {
       console.error('Error in getConversations:', error);
       throw error;
@@ -142,7 +142,7 @@ export class ConversationService {
         throw error;
       }
 
-      return data || [];
+      return (data as unknown as ConversationWithLastMessage[]) || [];
     } catch (error) {
       console.error('Error in searchConversations:', error);
       throw error;
