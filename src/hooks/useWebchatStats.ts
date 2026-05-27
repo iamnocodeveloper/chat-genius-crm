@@ -40,28 +40,31 @@ const DEFAULT_STATS: WebchatStats = {
   receiptRate: 0,
 };
 
+// Use untyped client for columns not yet present in generated types
+const sb = supabase as any;
+
 const fetchWebchatStats = async (effectiveUserId: string): Promise<WebchatStatsResult> => {
-  const { count: totalConversations } = await supabase
+  const { count: totalConversations } = await sb
     .from('conversations')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', effectiveUserId)
     .eq('channel_type', 'webchat');
 
-  const { count: casinoUsersCreated } = await supabase
+  const { count: casinoUsersCreated } = await sb
     .from('conversations')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', effectiveUserId)
     .eq('channel_type', 'webchat')
     .eq('casino_user_created', true);
 
-  const { count: paymentReceiptsSent } = await supabase
+  const { count: paymentReceiptsSent } = await sb
     .from('conversations')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', effectiveUserId)
     .eq('channel_type', 'webchat')
     .eq('payment_receipt_sent', true);
 
-  const { data: usersData } = await supabase
+  const { data: usersData } = await sb
     .from('conversations')
     .select('id, casino_username, contact_name, created_at, payment_receipt_sent, payment_receipt_detected_at')
     .eq('user_id', effectiveUserId)
@@ -85,7 +88,7 @@ const fetchWebchatStats = async (effectiveUserId: string): Promise<WebchatStatsR
     receiptRate,
   };
 
-  const { data: allConversations } = await supabase
+  const { data: allConversations } = await sb
     .from('conversations')
     .select('created_at, casino_user_created, payment_receipt_sent')
     .eq('user_id', effectiveUserId)
@@ -101,7 +104,7 @@ const fetchWebchatStats = async (effectiveUserId: string): Promise<WebchatStatsR
     dailyMap.set(dateStr, { date: dateStr, conversations: 0, users_created: 0, receipts: 0 });
   }
 
-  allConversations?.forEach(conv => {
+  (allConversations as any[] | null)?.forEach((conv) => {
     const dateStr = conv.created_at?.split('T')[0];
     if (dateStr && dailyMap.has(dateStr)) {
       const day = dailyMap.get(dateStr)!;
@@ -113,7 +116,7 @@ const fetchWebchatStats = async (effectiveUserId: string): Promise<WebchatStatsR
 
   return {
     stats,
-    createdUsers: usersData || [],
+    createdUsers: (usersData as CreatedUser[]) || [],
     dailyStats: Array.from(dailyMap.values()),
   };
 };

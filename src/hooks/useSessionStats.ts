@@ -192,21 +192,21 @@ const fetchSessionStats = async (userId: string): Promise<Record<string, Session
     .eq('user_id', userId);
 
   if (webChatbots) {
-    const { data: landingConversations } = await supabase
+    const { data: landingConversations } = await (supabase as any)
       .from('landing_chat_conversations')
       .select('id, updated_at')
-      .eq('user_id', userId);
+      .eq('user_id', userId) as { data: { id: string; updated_at: string | null }[] | null };
 
     if (landingConversations && landingConversations.length > 0) {
-      const landingConvIds = landingConversations.map(c => c.id);
+      const landingConvIds = landingConversations.map((c) => c.id);
 
-      const { count: receivedCount } = await supabase
+      const { count: receivedCount } = await (supabase as any)
         .from('landing_chat_messages')
         .select('*', { count: 'exact', head: true })
         .in('conversation_id', landingConvIds)
         .eq('direction', 'inbound');
 
-      const { count: sentCount } = await supabase
+      const { count: sentCount } = await (supabase as any)
         .from('landing_chat_messages')
         .select('*', { count: 'exact', head: true })
         .in('conversation_id', landingConvIds)

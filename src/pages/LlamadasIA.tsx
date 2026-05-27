@@ -811,7 +811,7 @@ export default function LlamadasIA() {
 
             {/* Nueva Sección: Resúmenes y Análisis de Resultados por Agente */}
             {SPECIALIZED_AGENTS.filter(ag => ag.id === agentTab).map(ag => {
-              const agentCalls = calls.filter(c => c.assistant_id === ag.vapiId);
+              const agentCalls = calls.filter(c => (c as any).assistant_id === ag.vapiId);
               const totalCalls = agentCalls.length;
               const completedCalls = agentCalls.filter(c => c.status === 'completed').length;
               const failedCalls = agentCalls.filter(c => c.status === 'failed').length;
