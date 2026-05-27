@@ -1888,6 +1888,42 @@ export type Database = {
         }
         Relationships: []
       }
+      registros_preguntas: {
+        Row: {
+          barra_signal: string | null
+          created_at: string
+          direccion_falla: string | null
+          falla_en_app_general: string | null
+          folio: string | null
+          id: string
+          telefono_cliente: string | null
+          tipo_falla: string | null
+          updated_at: string
+        }
+        Insert: {
+          barra_signal?: string | null
+          created_at?: string
+          direccion_falla?: string | null
+          falla_en_app_general?: string | null
+          folio?: string | null
+          id?: string
+          telefono_cliente?: string | null
+          tipo_falla?: string | null
+          updated_at?: string
+        }
+        Update: {
+          barra_signal?: string | null
+          created_at?: string
+          direccion_falla?: string | null
+          falla_en_app_general?: string | null
+          folio?: string | null
+          id?: string
+          telefono_cliente?: string | null
+          tipo_falla?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       role_permissions: {
         Row: {
           created_at: string | null
