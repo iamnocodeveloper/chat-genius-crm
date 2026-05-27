@@ -358,8 +358,8 @@ export default function EmailInboxes() {
 
   if (selectedInbox) {
     return (
-      <div className="min-h-screen bg-background p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
+      <div className="min-h-full bg-background p-3 md:p-6">
+        <div className="w-full space-y-6">
           <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" onClick={() => setSelectedInbox(null)}>
               <ArrowLeft className="h-4 w-4" />
@@ -674,8 +674,8 @@ export default function EmailInboxes() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-full bg-background p-3 md:p-6">
+      <div className="w-full space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
             <Mail className="h-8 w-8 text-primary" />
