@@ -616,12 +616,7 @@ export default function EmailInboxes() {
               </div>
               <div className="space-y-2">
                 <Label>Firma</Label>
-                <Textarea
-                  placeholder="Escribe tu firma para esta bandeja..."
-                  className="min-h-[120px]"
-                  value={signatureText}
-                  onChange={(e) => setSignatureText(e.target.value)}
-                />
+                <SignatureEditor value={signatureText} onChange={setSignatureText} />
               </div>
             </CardContent>
           </Card>
