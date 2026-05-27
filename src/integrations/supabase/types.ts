@@ -422,51 +422,6 @@ export type Database = {
           },
         ]
       }
-      casino_api_configs: {
-        Row: {
-          agent_username: string | null
-          api_base_url: string | null
-          api_key: string | null
-          created_at: string | null
-          id: string
-          is_active: boolean | null
-          name: string
-          parent_id: string | null
-          skin_id: string | null
-          updated_at: string | null
-          user_id: string
-          webhook_url: string | null
-        }
-        Insert: {
-          agent_username?: string | null
-          api_base_url?: string | null
-          api_key?: string | null
-          created_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          name: string
-          parent_id?: string | null
-          skin_id?: string | null
-          updated_at?: string | null
-          user_id: string
-          webhook_url?: string | null
-        }
-        Update: {
-          agent_username?: string | null
-          api_base_url?: string | null
-          api_key?: string | null
-          created_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          name?: string
-          parent_id?: string | null
-          skin_id?: string | null
-          updated_at?: string | null
-          user_id?: string
-          webhook_url?: string | null
-        }
-        Relationships: []
-      }
       column_message_triggers: {
         Row: {
           column_id: string
@@ -869,13 +824,55 @@ export type Database = {
         }
         Relationships: []
       }
+      conversation_analyses: {
+        Row: {
+          analysis: Json
+          conversation_id: string
+          created_at: string
+          highlights: Json
+          last_message_at: string | null
+          message_count: number
+          provider: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          analysis: Json
+          conversation_id: string
+          created_at?: string
+          highlights?: Json
+          last_message_at?: string | null
+          message_count?: number
+          provider: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          analysis?: Json
+          conversation_id?: string
+          created_at?: string
+          highlights?: Json
+          last_message_at?: string | null
+          message_count?: number
+          provider?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_analyses_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: true
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           assigned_at: string | null
           assigned_by: string | null
           assigned_to: string | null
-          casino_user_created: boolean | null
-          casino_username: string | null
           channel_type: string | null
           contact_name: string | null
           created_at: string | null
@@ -883,10 +880,10 @@ export type Database = {
           id: string
           last_inbound_message_time: string | null
           last_message: string | null
+          last_message_from_me: boolean
+          last_message_sender_name: string | null
           last_message_time: string | null
           lead_id: string | null
-          payment_receipt_detected_at: string | null
-          payment_receipt_sent: boolean | null
           phone_number: string
           pushname: string | null
           status: string | null
@@ -901,8 +898,6 @@ export type Database = {
           assigned_at?: string | null
           assigned_by?: string | null
           assigned_to?: string | null
-          casino_user_created?: boolean | null
-          casino_username?: string | null
           channel_type?: string | null
           contact_name?: string | null
           created_at?: string | null
@@ -910,10 +905,10 @@ export type Database = {
           id?: string
           last_inbound_message_time?: string | null
           last_message?: string | null
+          last_message_from_me?: boolean
+          last_message_sender_name?: string | null
           last_message_time?: string | null
           lead_id?: string | null
-          payment_receipt_detected_at?: string | null
-          payment_receipt_sent?: boolean | null
           phone_number: string
           pushname?: string | null
           status?: string | null
@@ -928,8 +923,6 @@ export type Database = {
           assigned_at?: string | null
           assigned_by?: string | null
           assigned_to?: string | null
-          casino_user_created?: boolean | null
-          casino_username?: string | null
           channel_type?: string | null
           contact_name?: string | null
           created_at?: string | null
@@ -937,10 +930,10 @@ export type Database = {
           id?: string
           last_inbound_message_time?: string | null
           last_message?: string | null
+          last_message_from_me?: boolean
+          last_message_sender_name?: string | null
           last_message_time?: string | null
           lead_id?: string | null
-          payment_receipt_detected_at?: string | null
-          payment_receipt_sent?: boolean | null
           phone_number?: string
           pushname?: string | null
           status?: string | null
@@ -979,31 +972,79 @@ export type Database = {
         Row: {
           ai_enabled: boolean
           ai_webhook_url: string | null
+          connection_error: string | null
+          connection_status: string | null
           created_at: string
+          display_name: string | null
           email_address: string
           id: string
+          imap_host: string | null
+          imap_password: string | null
+          imap_port: number | null
+          imap_secure: boolean | null
+          imap_username: string | null
+          last_seen_uid: number | null
+          last_synced_at: string | null
           signature_html: string | null
           signature_text: string | null
+          smtp_host: string | null
+          smtp_password: string | null
+          smtp_port: number | null
+          smtp_secure: boolean | null
+          smtp_username: string | null
+          sync_enabled: boolean | null
           user_id: string | null
         }
         Insert: {
           ai_enabled?: boolean
           ai_webhook_url?: string | null
+          connection_error?: string | null
+          connection_status?: string | null
           created_at?: string
+          display_name?: string | null
           email_address: string
           id?: string
+          imap_host?: string | null
+          imap_password?: string | null
+          imap_port?: number | null
+          imap_secure?: boolean | null
+          imap_username?: string | null
+          last_seen_uid?: number | null
+          last_synced_at?: string | null
           signature_html?: string | null
           signature_text?: string | null
+          smtp_host?: string | null
+          smtp_password?: string | null
+          smtp_port?: number | null
+          smtp_secure?: boolean | null
+          smtp_username?: string | null
+          sync_enabled?: boolean | null
           user_id?: string | null
         }
         Update: {
           ai_enabled?: boolean
           ai_webhook_url?: string | null
+          connection_error?: string | null
+          connection_status?: string | null
           created_at?: string
+          display_name?: string | null
           email_address?: string
           id?: string
+          imap_host?: string | null
+          imap_password?: string | null
+          imap_port?: number | null
+          imap_secure?: boolean | null
+          imap_username?: string | null
+          last_seen_uid?: number | null
+          last_synced_at?: string | null
           signature_html?: string | null
           signature_text?: string | null
+          smtp_host?: string | null
+          smtp_password?: string | null
+          smtp_port?: number | null
+          smtp_secure?: boolean | null
+          smtp_username?: string | null
+          sync_enabled?: boolean | null
           user_id?: string | null
         }
         Relationships: []
@@ -1018,8 +1059,10 @@ export type Database = {
           id: string
           inbox_id: string | null
           is_read: boolean | null
+          message_id_header: string | null
+          message_uid: number | null
           received_at: string
-          requires_human_followup: boolean | null
+          requires_human_followup: boolean
           subject: string | null
           to_email: string | null
         }
@@ -1032,8 +1075,10 @@ export type Database = {
           id?: string
           inbox_id?: string | null
           is_read?: boolean | null
+          message_id_header?: string | null
+          message_uid?: number | null
           received_at?: string
-          requires_human_followup?: boolean | null
+          requires_human_followup?: boolean
           subject?: string | null
           to_email?: string | null
         }
@@ -1046,8 +1091,10 @@ export type Database = {
           id?: string
           inbox_id?: string | null
           is_read?: boolean | null
+          message_id_header?: string | null
+          message_uid?: number | null
           received_at?: string
-          requires_human_followup?: boolean | null
+          requires_human_followup?: boolean
           subject?: string | null
           to_email?: string | null
         }
@@ -1178,36 +1225,6 @@ export type Database = {
         }
         Relationships: []
       }
-      ia_default_settings: {
-        Row: {
-          cashier_numbers: string
-          casino_link: string | null
-          cbu: string
-          created_at: string | null
-          id: number
-          is_enabled: boolean
-          updated_at: string | null
-        }
-        Insert: {
-          cashier_numbers?: string
-          casino_link?: string | null
-          cbu?: string
-          created_at?: string | null
-          id?: number
-          is_enabled?: boolean
-          updated_at?: string | null
-        }
-        Update: {
-          cashier_numbers?: string
-          casino_link?: string | null
-          cbu?: string
-          created_at?: string | null
-          id?: number
-          is_enabled?: boolean
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       ia_humanization_settings: {
         Row: {
           ai_temperature: number
@@ -1282,101 +1299,6 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
-      }
-      landing_chat_config: {
-        Row: {
-          cashier_number: string | null
-          cbu: string | null
-          created_at: string | null
-          id: string
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          cashier_number?: string | null
-          cbu?: string | null
-          created_at?: string | null
-          id?: string
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          cashier_number?: string | null
-          cbu?: string | null
-          created_at?: string | null
-          id?: string
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      landing_chat_conversations: {
-        Row: {
-          created_at: string | null
-          id: string
-          session_id: string
-          status: string | null
-          updated_at: string | null
-          user_id: string
-          visitor_email: string | null
-          visitor_name: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          session_id: string
-          status?: string | null
-          updated_at?: string | null
-          user_id: string
-          visitor_email?: string | null
-          visitor_name?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          session_id?: string
-          status?: string | null
-          updated_at?: string | null
-          user_id?: string
-          visitor_email?: string | null
-          visitor_name?: string | null
-        }
-        Relationships: []
-      }
-      landing_chat_messages: {
-        Row: {
-          content: string
-          conversation_id: string
-          created_at: string | null
-          direction: string
-          id: string
-          user_id: string
-        }
-        Insert: {
-          content: string
-          conversation_id: string
-          created_at?: string | null
-          direction: string
-          id?: string
-          user_id: string
-        }
-        Update: {
-          content?: string
-          conversation_id?: string
-          created_at?: string | null
-          direction?: string
-          id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "landing_chat_messages_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "landing_chat_conversations"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       lead_columns: {
         Row: {
@@ -2109,6 +2031,36 @@ export type Database = {
           },
         ]
       }
+      session_user_access: {
+        Row: {
+          account_owner_id: string
+          channel_type: string
+          connection_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          account_owner_id: string
+          channel_type: string
+          connection_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          account_owner_id?: string
+          channel_type?: string
+          connection_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       system_status: {
         Row: {
           component_name: string
@@ -2715,6 +2667,7 @@ export type Database = {
       }
       vapi_assistants: {
         Row: {
+          account_owner_id: string | null
           created_at: string | null
           first_message: string | null
           id: string
@@ -2727,6 +2680,7 @@ export type Database = {
           voice_provider: string | null
         }
         Insert: {
+          account_owner_id?: string | null
           created_at?: string | null
           first_message?: string | null
           id?: string
@@ -2739,6 +2693,7 @@ export type Database = {
           voice_provider?: string | null
         }
         Update: {
+          account_owner_id?: string | null
           created_at?: string | null
           first_message?: string | null
           id?: string
@@ -2754,6 +2709,7 @@ export type Database = {
       }
       vapi_calls: {
         Row: {
+          account_owner_id: string | null
           assistant_id: string | null
           campaign_id: string | null
           created_at: string | null
@@ -2774,6 +2730,7 @@ export type Database = {
           vapi_call_id: string | null
         }
         Insert: {
+          account_owner_id?: string | null
           assistant_id?: string | null
           campaign_id?: string | null
           created_at?: string | null
@@ -2794,6 +2751,7 @@ export type Database = {
           vapi_call_id?: string | null
         }
         Update: {
+          account_owner_id?: string | null
           assistant_id?: string | null
           campaign_id?: string | null
           created_at?: string | null
@@ -2825,6 +2783,7 @@ export type Database = {
       }
       vapi_campaigns: {
         Row: {
+          account_owner_id: string | null
           assistant_id: string | null
           contacts: Json
           created_at: string | null
@@ -2834,6 +2793,7 @@ export type Database = {
           status: string | null
         }
         Insert: {
+          account_owner_id?: string | null
           assistant_id?: string | null
           contacts: Json
           created_at?: string | null
@@ -2843,6 +2803,7 @@ export type Database = {
           status?: string | null
         }
         Update: {
+          account_owner_id?: string | null
           assistant_id?: string | null
           contacts?: Json
           created_at?: string | null
@@ -2855,6 +2816,7 @@ export type Database = {
       }
       vapi_phone_numbers: {
         Row: {
+          account_owner_id: string | null
           created_at: string | null
           friendly_name: string | null
           id: string
@@ -2862,6 +2824,7 @@ export type Database = {
           vapi_phone_number_id: string
         }
         Insert: {
+          account_owner_id?: string | null
           created_at?: string | null
           friendly_name?: string | null
           id?: string
@@ -2869,6 +2832,7 @@ export type Database = {
           vapi_phone_number_id: string
         }
         Update: {
+          account_owner_id?: string | null
           created_at?: string | null
           friendly_name?: string | null
           id?: string
@@ -3140,15 +3104,7 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "workspaces_casino_api_config_id_fkey"
-            columns: ["casino_api_config_id"]
-            isOneToOne: false
-            referencedRelation: "casino_api_configs"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
