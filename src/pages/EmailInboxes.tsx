@@ -27,6 +27,7 @@ import { Mail, Plus, Inbox, RefreshCw, Eye, ArrowLeft, Send, Reply, Trash2, Save
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { Database } from '@/integrations/supabase/types';
+import { SignatureEditor } from '@/components/email/SignatureEditor';
 
 type EmailInbox = Database['public']['Tables']['email_inboxes']['Row'];
 type EmailMessage = Database['public']['Tables']['email_messages']['Row'];
