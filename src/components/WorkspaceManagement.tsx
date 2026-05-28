@@ -102,7 +102,7 @@ const WorkspaceManagement = () => {
   };
 
   const loadCasinoApiConfigs = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('casino_api_configs')
       .select('id, name')
       .eq('user_id', effectiveUserId)
