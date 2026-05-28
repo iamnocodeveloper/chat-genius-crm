@@ -39,7 +39,7 @@ export class ConversationService {
   ): Promise<ConversationWithLastMessage[]> {
     try {
       // Seleccionar columnas necesarias (excluyendo mensajes) para reducir egress
-      let query = supabase
+      let query = (supabase as any)
         .from('conversations')
         .select('id, user_id, pushname, phone_number, whatsapp_number, last_message, last_message_time, unread_count, status, channel_type, telegram_bot_id, twilio_connection_id, facebook_connection_id, lead_id, created_at, updated_at, contact_name, casino_user_created, casino_username, last_inbound_message_time, payment_receipt_detected_at, payment_receipt_sent, assigned_to, assigned_at, assigned_by')
         .eq('user_id', userId);
@@ -129,7 +129,7 @@ export class ConversationService {
   static async searchConversations(userId: string, searchTerm: string): Promise<ConversationWithLastMessage[]> {
     try {
       // Seleccionar columnas necesarias (excluyendo mensajes) para reducir egress
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('conversations')
         .select('id, user_id, pushname, phone_number, whatsapp_number, last_message, last_message_time, unread_count, status, channel_type, telegram_bot_id, twilio_connection_id, facebook_connection_id, lead_id, created_at, updated_at, contact_name, casino_user_created, casino_username, last_inbound_message_time, payment_receipt_detected_at, payment_receipt_sent, assigned_to, assigned_at, assigned_by')
         .eq('user_id', userId)
